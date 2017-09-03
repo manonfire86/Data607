@@ -1,0 +1,114 @@
+---
+title: "Assignment-1"
+author: "Jun Yan"
+output:
+  html_document: default
+  pdf_document: default
+---
+
+### Loading Data
+
+First I load the data directly from the URL address into a data.frame object.
+
+```{r eval=TRUE}
+theURL <- "https://archive.ics.uci.edu/ml/machine-learning-databases/mushroom/agaricus-lepiota.data"
+mushroomData <- read.table(theURL, header=FALSE, sep=",")
+```
+
+Let's get a feel what it looks like.
+
+```{r eval=TRUE}
+dim(mushroomData)
+head(mushroomData)
+tail(mushroomData)
+```
+
+It has `r dim(mushroomData)[1]` cases just like the data dictionary indicates. The head and tail of the data.frame matches what it looks like when you go to the URL. 
+
+Let's check the number of cases of edible vs poison.
+
+```{r eval=TRUE}
+numEdible <- dim(subset(mushroomData, V1 == "e"))[1]
+numEdible
+numPoison <- dim(subset(mushroomData, V1 == "p"))[1]
+numPoison
+```
+
+This matches with the numbers given by the data dictionary. So the loading is successful.
+
+### Manipulating Data
+
+The four columns I am interested in this data set are, `cap-color`, `gill-color`, `ring-type`, and `habitat`. Including the `edible-poison` column, I extract them from the `mushroomData`. From the data dictionary, they are label as `V1`, `V4`, `V10`, `V20`, and `V23` in the data set.
+
+```{r eval=TRUE}
+mushroom <- mushroomData[, c("V1", "V4", "V10", "V20", "V23")]
+```
+
+The columns are changed using `names` function.
+
+```{r eval=TRUE}
+names(mushroom) <- c("edible_poison", "cap_color", "gill_color", "ring_type", "habitat")
+names(mushroom)
+```
+
+Now I replace the abbreviations in the data, according to the data dictionary. But first I want to use `table` function to save the composition in the data. So I can use it to compare after renaming the factors. This way I can check if there's anything wrong with the renaming method.
+
+To do this, I create a for loop to apple `table` function to each column and save it in a list object.
+
+```{r eval=TRUE}
+beforeRename <- list()
+for (i in 1:dim(mushroom)[2])
+  {
+  beforeRename[[i]] <- table(mushroom[,i])
+  }
+```
+
+The abbreviations are now replaced.
+
+```{r eval=TRUE}
+levels(mushroom$edible_poison) <- list('edible'='e', 'poison'='p')
+levels(mushroom$cap_color) <- list('brown'='n','buff'='b','cinnamon'='c','gray'='g','green'='r','pink'='p','purple'='u','red'='e','white'='w','yellow'='y')
+levels(mushroom$gill_color) <- list('black'='k','brown'='n','buff'='b','chocolate'='h','gray'='g','green'='r','orange'='o','pink'='p','purple'='u','red'='e','white'='w','yellow'='y')
+levels(mushroom$ring_type) <- list('cobwebby'='c','evanescent'='e','flaring'='f','large'='l','none'='n','pendant'='p','sheathing'='s','zone'='z')
+levels(mushroom$habitat) <- list('grasses'='g','leaves'='l','meadows'='m','paths'='p','urban'='u','waste'='w','woods'='d')
+```
+Let's check if the dimension stays same.
+
+```{r eval=TRUE}
+dim(mushroom)
+```
+Now, let's check if the renaming is done right. I create another list of tables to compare with the tables before renaming.
+
+```{r eval=TRUE}
+afterRename <- list()
+for (i in 1:dim(mushroom)[2])
+  {
+  afterRename[[i]] <- table(mushroom[,i])
+  }
+```
+```{r eval=TRUE}
+beforeRename
+afterRename
+```
+
+It can be seen that the composition did not change. So the renaming is successful.
+
+Interestly, from this list, we see that the `ring_type` composition has 8 factors according to the data dictionary: cobwebby=c,evanescent=e,flaring=f,large=l,none=n,pendant=p,sheathing=s,zone=z.
+
+But the actual data does not use all factors. It does not use 3 factors: cobwebby, sheathing, and zone. In another word, none of the mushrooms have these 3 ring types.
+
+Let's confirm using the original data set.
+
+```{r eval=TRUE}
+levels(mushroomData$V20)
+```
+
+So yes, the data dictionary listed 8 factors, while the data uses 5 factors.
+
+### Finish Product
+
+Below I present the finish product:
+
+```{r eval=TRUE}
+mushroom
+```
