@@ -1,0 +1,96 @@
+---
+title: "Assignment-2"
+author: "Jun Yan"
+output: html_document
+---
+
+### What is required to run this assignment?
+
+1. 3 csv files containing the data:
+    i) names.csv
+    ii) movies.csv
+     iii) ratings.csv
+2. MySQL Workbench server setup and running
+3. R package RMySQL installed
+
+### Loading Data
+
+I begin by establishing connection.
+
+```{r eval=TRUE}
+library(RMySQL)
+con <- dbConnect(MySQL(), user = "user007", password = "123456789", host = "DESKTOP-1GKOF0M", dbname = "movierate")
+```
+
+The `user`, `password`, `host`, and `dbname` will depend on how your system is set up.
+
+Now let's see what the tables look like.
+
+```{r eval=TRUE}
+dbGetQuery(con, "SELECT * FROM movies")
+dbGetQuery(con, "SELECT * FROM names")
+dbGetQuery(con, "SELECT * FROM ratings")
+```
+
+Notice that "Star Wars: The Last Jedi" is not out yet, so no one rated it, and in the `names` table, there is a dummy person named "No One" who has not rated any movies. 
+
+### Join Table
+
+I want to join the tables together. Here I use two `LEFT JOIN` statement.
+
+```{r eval=TRUE}
+querry1 <- "SELECT movie, last_name, first_name, rating
+            FROM movies 
+            LEFT JOIN ratings on movies.movieid = ratings.movieid
+            LEFT JOIN names on ratings.nameid = names.nameid
+            ORDER BY movie, rating DESC"
+
+joinTable1 <- dbGetQuery(con, querry1)
+joinTable1
+```
+
+Notice that the Star Wars movie is listed with NA as value. And the dummy person No One is not on this table. This is because `LEFT JOIN` preserves only the left side table of the join statement. 
+
+Let's try `RIGHT JOIN`. It should preserve the right side table of the join statement.
+
+```{r eval=TRUE}
+querry2 <- "SELECT movie, last_name, first_name, rating
+            FROM movies 
+            RIGHT JOIN ratings on movies.movieid = ratings.movieid
+            RIGHT JOIN names on ratings.nameid = names.nameid
+            ORDER BY movie, rating DESC"
+
+joinTable2 <- dbGetQuery(con, querry2)
+joinTable2
+```
+
+As expected, Star Wars movie is dropped from the table, but the dummpy person No One is listed eventhough that person has not rated any movies.
+
+### Average Rating
+
+Here I am interested in finding the average rating of each movie, first using SQL, then compare with the result using R code.
+
+**Using SQL**
+
+```{r eval=TRUE}
+querry <- "SELECT movie, AVG(rating) AS avg_rating
+            FROM movies 
+            LEFT JOIN ratings on movies.movieid = ratings.movieid
+            LEFT JOIN names on ratings.nameid = names.nameid
+            GROUP BY movie
+            ORDER BY avg_rating DESC"
+
+avgTable <- dbGetQuery(con, querry)
+avgTable
+```
+
+**Using R**
+
+```{r eval=TRUE}
+tble <- aggregate(joinTable1$rating, by = list(joinTable1$movie), mean)
+names(tble) <- c("movie", "avg_rating")
+tble[order(tble$avg_rating, decreasing = TRUE), ]
+```
+
+The results are the same. 
+
