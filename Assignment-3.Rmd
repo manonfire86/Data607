@@ -1,0 +1,130 @@
+---
+title: "Assignment-3"
+author: "Jun Yan"
+output:
+  html_document:
+    toc: true
+    toc_float: true
+---
+
+### Start
+
+Load stringr package and the data
+
+```{r}
+library(stringr)
+raw.data <-"555-1239Moe Szyslak(636) 555-0113Burns, C. Montgomery555-6542Rev. Timothy Lovejoy555 8904Ned Flanders636-555-3226Simpson, Homer5553642Dr. Julius Hibbert" 
+```
+
+Extract the names from the raw data
+
+```{r}
+name <- unlist(str_extract_all(raw.data, "[[:alpha:],. ]{2,}")) 
+name
+```
+
+### Problem 3.a) 
+
+Step 1. Remove any words end with a period. This will remove all titles and second names
+
+```{r}
+name1 <- str_replace_all(name, pattern = "\\w+\\. ", replacement = "")
+name1
+```
+
+Step 2. Create a function that split a name with comma and flip it so it's first_name first
+
+```{r}
+correctName <- function(string)
+{
+  spliting <- str_split(string, pattern = ", ")
+  lname <- spliting[[1]][1]
+  fname <- spliting[[1]][2]
+  return(str_c(fname, lname, sep = " "))
+}
+```
+
+Step 3. Use a for-loop to go thru all the names applying the function.
+
+```{r}
+for (i in 1:length(name1))
+{
+  if (str_detect(name1[i], pattern = ", "))
+  { 
+    name1[i] <- correctName(name1[i])
+  }
+}
+name1
+```
+
+### Problem 3.b)
+
+```{r}
+title <- str_detect(name, pattern = "Rev.|Dr.")
+data.frame(name, title)
+```
+
+Alternatively, below code will catch other titles as well, detecting pattern of words with 2 to 3 letters ending with a period.
+
+```{r}
+str_detect(name, pattern = "\\w{2,3}\\. ")
+```
+
+### Problem 3.c)
+
+```{r}
+second_name <- str_detect(name, pattern = " \\w{1}\\. ")
+data.frame(name, second_name)
+```
+
+### Problem 4.a)
+
+Numbers 0 thru 9 match one or more times ending with dollar sign $
+
+```{r}
+example4a <- "90210$"
+str_detect(example4a, "[0-9]+\\$")
+```
+
+### Problem 4.b)
+
+A word that is 1 to 4 lower case English letters in length
+
+```{r}
+example4b <- "test"
+str_detect(example4b, "\\b[a-z]{1,4}\\b")
+```
+
+### Problem 4.c)
+
+A .txt file named with or without any characters.
+
+```{r}
+example4c <- c("testing1.txt", ".txt")
+str_detect(example4c, ".*?\\.txt$")
+```
+
+### Problem 4.d)
+
+Date of birth formatted mm/dd/yyyy. Althought the query doesn't have to be for DOB.
+
+```{r}
+example4d <- c("07/02/2013", "12/34/5678")
+str_detect(example4d, "\\d{2}/\\d{2}/\\d{4}")
+```
+
+### Problem 4.e)
+
+This is for HTML code search.
+A string surrounded by <> brackets, followed by string of any length more than 1, followed by back referencing the same string but added a slash /
+
+```{r}
+example4e <- c("<bold> Any string </bold>", "<646718>3</646718>")
+str_detect(example4e, "<(.+?)>.+?</\\1>")
+```
+
+
+
+
+
+
