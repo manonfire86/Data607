@@ -123,8 +123,83 @@ example4e <- c("<bold> Any string </bold>", "<646718>3</646718>")
 str_detect(example4e, "<(.+?)>.+?</\\1>")
 ```
 
+### Problem 9
 
+Here's the string where there's a message hidden:
 
+```{r}
+message <- "clcopCow1zmstc0d87wnkig7OvdicpNuggvhryn92Gjuwczi8hqrfpRxs5Aj5dwpn0TanwoUwisdij7Lj8kpf03AT5Idr3coc0bt7yczjatOaootj55t3Nj3ne6c4Sfek.r1w1YwwojigOd6vrfUrbz2.2bkAnbhzgv4R9i05zEcrop.wAgnb.SqoU65fPa1otfb7wEm24k6t3sR9zqe5fy89n6Nd5t9kc4fE905gmc4Rgxo5nhDk!gr"
+```
 
+I noticed there are four types of characters in this string:
 
+1. lower case letters [a-z]
+2. upper case letters [A-Z]
+3. digits [0-9]
+4. two punctuation [[.]!]
+
+My first plan was to remove these types one by one from the string to see what's the result.
+
+```{r}
+func <- c("[0-9]", "[a-z]", "[A-Z]", "[[.]!]")
+str_replace_all(message, func, replacement = "")
+```
+
+Didn't look good. 
+
+My second try was to remove combination of two of the four types from the string, then combination of three types. And check to see what's the result.
+
+Here I use `combn` function to generate combinations, for example:
+
+```{r}
+combn(func, 2)
+```
+
+Here, it generates a matrix, where each column is a combination of the types.
+
+I then wrote a double for-loop and used `str_c` to combine the types, and removed the combined types from the string message.
+
+```{r}
+combo <- combn(func, 2)
+combo_dim <- dim(combo)
+
+# Following double loops splice the func together
+for (j in 1:combo_dim[2])
+{
+  new_func <- combo[1,j]
+  for (i in 2:combo_dim[1])
+  {
+    new_func <- str_c(new_func, "|", combo[i,j])
+  }
+  
+  # Now removing the combined funcs
+  new_message <- str_replace_all(message, new_func, replacement = "")
+  print(c(new_func, new_message))
+}
+```
+
+I found the message! After removing the two types "[0-9]|[a-z]", the message appears to be *"Congratulations you are a supernerd"*.
+
+I continued on to remove combination of three types, using the same method, just to see what happens. 
+
+```{r}
+combo <- combn(func, 3)
+combo_dim <- dim(combo)
+
+# Following double loops splice the func together
+for (j in 1:combo_dim[2])
+{
+  new_func <- combo[1,j]
+  for (i in 2:combo_dim[1])
+  {
+    new_func <- str_c(new_func, "|", combo[i,j])
+  }
+  
+  # Now removing the combined funcs
+  new_message <- str_replace_all(message, new_func, replacement = "")
+  print(c(new_func, new_message))
+}
+```
+
+As you can see, after removing "[0-9]|[a-z]|[[.]!]", the message still can be seen. This is because the message was hidden as upper case in the strings.
 
