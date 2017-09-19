@@ -1,0 +1,224 @@
+---
+title: "Project-1"
+author: "Jun Yan"
+output:
+  html_document:
+    toc: true
+    toc_float: true
+---
+
+## Loading Data and Packages
+
+First, begin by loading the data. Here, `readLines` function is used. This function turns the .txt file into a vector, where each line of the .txt is a element in the vector
+
+```{r}
+theURL <- "https://raw.githubusercontent.com/Tyllis/Data607/master/tournamentinfo.txt"
+raw.data <- readLines(theURL)
+```
+
+To verify the load is done correctly, the head and tail of the vector are checked.
+
+```{r}
+head(raw.data)
+tail(raw.data)
+```
+
+Also, the length of the vector is checked. The text file shows that there are 64 players, each player occupies 3 lines - the two lines containing each player's information and a line containing just dash lines "-". The text file also starts with 4 lines in the begining, containing two lines of just dash lines, and two lines containing the column names. So the total number of elements in the vector should be 64x3+4.
+
+```{r}
+length(raw.data) == 64*3+4
+```
+
+So the load is done correctly.
+
+This project uses `stringr` package extensively.
+
+```{r}
+library(stringr)
+```
+
+## Vector Manipulation
+
+A number of steps are needed to turn the vector into a data.frame object usable for analysis.
+
+### Step 1. Remove the title elements
+
+Here, the elements containing the titles are removed. we only need to look at the elements containing player and game information.
+
+```{r}
+vec1 <- raw.data[5:length(raw.data)]
+head(vec1)
+```
+
+### Step 2. Remove dash line elements
+
+In this step, the elements containing just dash lines "-" are removed.
+
+```{r}
+remove.value <- str_detect(vec1, pattern = "[-]{2,}")
+vec2 <- vec1[!remove.value]
+head(vec2)
+```
+
+Verifying that all dash lines are removed, there are one dash line for each player in the vector table1. So there are 64 total dash lines.
+
+```{r}
+length(vec2) == length(vec1) - 64
+```
+
+### Step 3. Combining elements
+
+Now we have a vector that contains just player and game information. But each player's information is captured in two elements. We want to combine the two elements into one. 
+
+This can be done by spliting the vector into two, one containing odd number reference and the other with even number reference. Then, the two vectors are spliced together using `str_c` function.
+
+```{r}
+split1 <- vec2[seq(1, length(vec2), 2)] 
+split2 <- vec2[seq(2, length(vec2), 2)] 
+vec3 <- str_c(split1, split2)
+```
+
+The result should be a 64 elements vector, where each element is a player.
+
+```{r}
+length(vec3)
+```
+
+Sampling around the vector just to get a feel what it looks like.
+
+```{r}
+vec3[sample(1:length(vec3), 10)]
+```
+
+### Step 4. Splitting elements 
+
+Recognizing that each column in the text table is seperated by "|", we can use `str_split` to split the elements of the vector into a list, where each list element contains a vector, which in term contains a player's data. 
+
+```{r}
+lst4 <- str_split(vec3, pattern = "[|]")
+lst4[1]
+length(lst4) == 64
+```
+
+### Step 5. Trim spaces
+
+In this step, the list is unpacked into vectors again, and spaces are trimmed off the string elements.
+
+```{r}
+vec5 <- str_trim(unlist(lst4))
+```
+
+Verifying the result by looking at the first and last player.
+
+```{r}
+vec5[1:21]
+vec5[(length(vec5)-20):length(vec5)]
+```
+
+So each player's match data is now captured in 21 string elements. We should have 64x21 elements in the new vector.
+
+```{r}
+length(vec5) == 64*21
+```
+
+### Step 6. Extract the ratings
+
+In this step, the rating data of each player is extracted using the `str_extract_all` function. Then, `str_detect` is used to flag the elements that contain the rating information, so it can be inserted back into the vector.
+
+```{r}
+ratings <- unlist(str_extract_all(vec5, pattern = "R:  ?[0-9]{3,4}"))
+ratings_pos <- str_detect(vec5, pattern = "[0-9]{8} ")
+vec6 <- vec5
+vec6[ratings_pos] <- ratings
+```
+
+### Step 7. Remove Letters
+
+In this step, the "W", "L", or "D" letters are removed from the string elements containing match information, so that only player numbers are left. The "R:" letters are also removed from the rating information.
+
+```{r}
+vec7 <- str_replace_all(vec6, pattern = "[WLD] |R: ", replacement = "")
+```
+
+Taking a look at the result:
+
+```{r}
+vec7[1:42]
+vec7[(length(vec7)-20):length(vec7)]
+length(vec7) == 64*21
+```
+
+## Creating `data.frame` Object
+
+Now we can create the data.frame object. 
+
+Recognizing that each type of data is seperated by 21 elements until the same type of data appears again in the vector, `seq` function can be used to reference all the same data in the vector. 
+
+First, we create vectors containing the information we need:
+
+```{r}
+player_num <- as.numeric(vec7[seq(1, length(vec7), 21)])
+player_name <- vec7[seq(2, length(vec7), 21)]
+player_state <- vec7[seq(11, length(vec7), 21)]
+points <- as.numeric(vec7[seq(3, length(vec7), 21)])
+prerating <- as.numeric(vec7[seq(12, length(vec7), 21)])
+round1 <- as.numeric(vec7[seq(4, length(vec7), 21)])
+round2 <- as.numeric(vec7[seq(5, length(vec7), 21)])
+round3 <- as.numeric(vec7[seq(6, length(vec7), 21)])
+round4 <- as.numeric(vec7[seq(7, length(vec7), 21)])
+round5 <- as.numeric(vec7[seq(8, length(vec7), 21)])
+round6 <- as.numeric(vec7[seq(9, length(vec7), 21)])
+round7 <- as.numeric(vec7[seq(10, length(vec7), 21)])
+```
+
+When `as.numeric` is used, if the string element contains non-numeric string, a "NA" is introduced to the data cell. Hence the warning. 
+
+We now create the data.frame object:
+
+```{r}
+tour.data <- data.frame(player_num, player_name, player_state, points, prerating, round1, round2, round3, round4, round5, round6, round7)
+str(tour.data)
+head(tour.data)
+tail(tour.data)
+```
+
+## Manipulating data.frame Object
+
+The `round1` thru `round7` columns are referencing player numbers. We can use this information directly, by referencing them in the `prerating` column directly. We can fill the rounds columns with rating data instead.
+
+```{r}
+tour.data$round1 <- tour.data$prerating[tour.data$round1]
+tour.data$round2 <- tour.data$prerating[tour.data$round2]
+tour.data$round3 <- tour.data$prerating[tour.data$round3]
+tour.data$round4 <- tour.data$prerating[tour.data$round4]
+tour.data$round5 <- tour.data$prerating[tour.data$round5]
+tour.data$round6 <- tour.data$prerating[tour.data$round6]
+tour.data$round7 <- tour.data$prerating[tour.data$round7]
+
+```
+
+Now we can calculate the average match rating of opponents using `rowMeans` function.
+
+```{r}
+avgrating <- rowMeans(tour.data[,6:12], na.rm = TRUE)
+tour.data$avgrating <- round(avgrating)
+```
+
+## Exporting .csv
+
+Extract the columns needed for output.
+
+```{r}
+result <- tour.data[, c("player_name", "player_state", "points", "prerating", "avgrating")]
+head(result)
+tail(result)
+```
+
+Use `write.table` to create .csv.
+
+```{r}
+write.csv(result, file = "proj-1-result.csv")
+```
+
+
+
