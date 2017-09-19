@@ -201,6 +201,7 @@ Now we can calculate the average match rating of opponents using `rowMeans` func
 
 ```{r}
 avgrating <- rowMeans(tour.data[,6:12], na.rm = TRUE)
+round(avgrating)
 tour.data$avgrating <- round(avgrating)
 ```
 
@@ -214,7 +215,7 @@ head(result)
 tail(result)
 ```
 
-Use `write.table` to create .csv.
+Use `write.csv` to create .csv.
 
 ```{r}
 write.csv(result, file = "proj-1-result.csv")
