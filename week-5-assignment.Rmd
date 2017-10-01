@@ -1,0 +1,136 @@
+---
+title: "DATA607 Week-5-Assignment"
+author: "Jun Yan"
+output: 
+  html_document:
+    toc: yes
+    toc_float: yes
+    toc_depth: 4
+---
+
+### Load Packages and Data
+
+First, load the packages.
+
+```{r}
+library(tidyr)
+library(dplyr)
+```
+
+The .csv data is loaded.
+
+```{r}
+theURL <- "https://raw.githubusercontent.com/Tyllis/Data607/master/airlinedata.csv"
+aldata <- read.csv(theURL) 
+```
+
+Let's see what it looks like.
+
+```{r}
+aldata
+```
+
+### Transforming Data Set
+
+The .csv is loaded into a data.frame object. There are a couple of initial issues:
+
+- The csv data has a blank line in between the airlines. These blank line is imported as a line filled with "NA".
+- The airline names are only showing in the "on time" row. They are omitted in the "delayed" row.
+
+These two issues need to be dealt with first.
+
+#### Removing "NA" line
+
+The NA lines can be removed simply using the `filter` function.
+
+```{r}
+aldata <- filter(aldata, X != "")
+```
+
+#### Copy Airline Names
+
+First we give the airline column a name.
+
+```{r}
+names(aldata)[1] <- c("Airline")
+```
+
+Now we can copy the airline names onto the "delayed" row.
+
+```{r}
+numrow <- dim(aldata)[1]
+aldata[seq(2, numrow, 2), "Airline"] <- aldata[seq(1, numrow, 2), "Airline"]
+aldata
+```
+
+The data.frame now looks more tidy than we started.
+
+#### Cleaning Data
+
+Upon inspection, this data has 4 variables:
+
+- airline name
+- city name
+- number of on time flights
+- number of delayed flights
+
+The city names can be stacked using the `gather` function.
+
+The number of on-time or delayed flights can be spread into two columns using `spread` function.
+
+```{r}
+aldata <- aldata %>% 
+            gather(City, timliness, Los.Angeles:Seattle) %>% 
+            spread(X, timliness)
+aldata
+```
+
+It is now in its tidy form. Each column is a variable, and each row is a observation.
+
+### Analyzing Data Set
+
+I am interested to see which airline has more delays in these cities.
+
+```{r}
+aldata %>% 
+  select(Airline, delayed) %>% 
+  group_by(Airline) %>% 
+  summarise(total_delays = sum(delayed))
+```
+
+So Am West has more delays. 
+
+Let's look at the percentage or proportion of delays.
+
+But first we need to change the column name "on time" to "on_time", so it doesn't throw an error when we use `dplyr` functions.
+
+```{r}
+names(aldata)[4] <- "on_time"
+aldata %>% 
+  select(Airline, delayed, on_time) %>% 
+  group_by(Airline) %>% 
+  summarise(delay_proportion = sum(delayed)/(sum(delayed+on_time)))
+```
+
+Percentage wise, Alaska Airline has more delay. 
+
+Next, I am interested to see which city has the most delay by percentage.
+
+```{r}
+aldata %>% 
+  group_by(City) %>% 
+  summarise(delay_proportion = sum(delayed)/(sum(delayed+on_time)))
+```
+
+Therefore, San Francisco has 21.92% of its Alaska and Am West flights delayed, the highest among the cities.
+
+Lastly, I would like to see, for each airline, which city has the most delay.
+
+```{r}
+aldata %>% 
+  mutate(dp = delayed/(delayed+on_time)) %>% 
+  group_by(Airline) %>% 
+  filter(dp == max(dp))
+```
+
+Again, San Francisco tops the flight delay chart for both airlines.
