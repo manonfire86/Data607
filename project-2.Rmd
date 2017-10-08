@@ -1,0 +1,368 @@
+---
+title: "DATA 607 Project 2"
+author: "Jun Yan"
+output: 
+  html_document:
+    toc: true
+    toc_float: true
+    toc_depth: 5
+---
+
+
+#### 1.0 Warming Up.
+
+In this project I will be using the `tidyr`, `dplyr`, and `stringr` packages extensively.
+
+```{r results='hide', message=FALSE, warning=FALSE}
+library(tidyr)
+library(dplyr)
+library(stringr)
+```
+
+I will be looking into following three datasets:
+
+1. Transit Funding Time Series
+2. NYPD Motor Vehicle Collisions
+3. Global Shack Attack Data
+
+#### 2.0 Transit Funding Time Series
+
+The original dataset can be found here: https://www.transit.dot.gov/ntd/data-product/ts11-total-funding-time-series-2
+
+This is the Total Funding Summary for transit agencies in United States. It includes the total dollar spent annually reported by each transit agency from 1991 to 2016.
+
+##### 2.1 Cleaning Data
+
+First I load the data.
+
+```{r}
+theURL1 <- "https://raw.githubusercontent.com/Tyllis/Data607/master/TS1.1TimeSeriesOpCapFundingSummary_3.csv"
+t.data <- read.csv(theURL1, stringsAsFactors = FALSE)
+dimbfr <- dim(t.data) 
+str(t.data)
+```
+
+Here are some problems that needed to be fixed before the data.frame can be used for analysis:
+
+1. The table contains some redundant columns, "X" thru "X.3".
+2. The table contains some redundant rows at the end.
+2. The time series data is in "wide" format.
+3. Dollar amounts and the years are stored as strings.
+
+Also the first column name needs to be corrected.
+
+Below, I used `select` to remove the redundant columns, `gather` to stack the dollar amount data, `str_replace_all` to remove the "$" and ",", and `as.numeric` to turn string into numeric.
+
+```{r}
+names(t.data)[1] <- "Last.Report.Year"
+t.data <- t.data %>% 
+  select(Last.Report.Year : X2016) %>% 
+  filter(!is.na(Last.Report.Year)) %>% 
+  gather("Year", "Amount", X1991 : X2016)
+t.data$Amount <- t.data$Amount %>% 
+  str_replace_all(pattern = "[$,]", replacement = "") %>% 
+  as.numeric()
+t.data$Year <- t.data$Year %>% 
+  str_replace_all(pattern = "X", replacement = "") %>% 
+  as.numeric()
+dimaft <- dim(t.data) 
+str(t.data)
+```
+
+Notice that the `Amount` are large numbers. I created a column to scale the amount in millions.
+
+```{r}
+t.data$Amount.in.Mil <- t.data$Amount/1000000
+```
+
+The data is now in its tidy form. Each row is a observation. Each column is a variable.
+
+##### 2.2 Analyze Data
+
+First I would like to find out how many transit agencies are in the NY and NJ states. 
+
+```{r}
+nynj.data <- filter(t.data, State %in% c("NY", "NJ"))
+nynj <- table(nynj.data$State) / 26
+nynj
+```
+
+Note that because I stack the time series over 26 years (2016-1991+1 = 26 columns), each original row is stacked 26 times. So I divide the counts by 26. 
+
+It looks like NY has `r nynj["NY"]` agencies and NJ has `r nynj["NJ"]` agencies.
+
+I want to do some analysis on NYC MTA. But it looks like MTA is consisted of several sub-agencies and they are reported separately in the data base. First I would like to find out how many sub-agencies are there for MTA. I use `grep` to locate names that has "MTA" in it.
+
+```{r}
+mta.names <- nynj.data$Agency.Name %>% 
+  grep(pattern = "MTA", value = TRUE) %>% 
+  unique()
+mta.names
+```
+
+So there are `r length(mta.names)` agencies in MTA. I now extract the MTA agencies and perform some analysis. Here, I use `group_by` and `summarise`.
+
+```{r}
+mta.data <- filter(nynj.data, Agency.Name %in% mta.names)
+sum.mta <- mta.data %>% 
+  group_by(Year) %>% 
+  summarise(Total = sum(Amount.in.Mil, na.rm = TRUE))
+plot(x = sum.mta$Year, y = sum.mta$Total, xlab = "Year" , ylab = "Amount in Millions", type = "l", main = "MTA Total Spending")
+```
+
+Looks like MTA spending has been increasing steadily.
+
+Next I would like to see a bar plot, which should show break down of spending among the sub-agencies. But first I have to build a "wide" format table. To use `barplot`, the years must be in columns, so I must `spread` the data.
+
+Also, I have to do something with the MTA agency names. They are way too long. I just need the agency abbreviation inside the (). 
+
+```{r}
+mta.data$Agency.Name <- mta.data$Agency.Name %>% 
+  str_extract_all(pattern = "\\([[:alpha:]- ]+\\)") %>% 
+  str_extract_all(pattern = "[[:alpha:]- ]+") %>% 
+  unlist()
+sum2.mta <- mta.data %>% 
+  group_by(Agency.Name, Year) %>% 
+  summarise(Total = sum(Amount.in.Mil, na.rm = TRUE)) %>% 
+  spread(Year, Total)
+sum2.mta
+```
+
+Now I can build the barplot.
+
+```{r}
+colors <- c("blue", "green", "red", "yellow", "purple", "pink")
+Agency <- sum2.mta$Agency.Name
+lgspec <- list(x = "topleft", bty = "n")
+barplot(as.matrix(sum2.mta), legend.text = Agency, col = colors, xlab = "Year", ylab = "Amount in Millions", main = "MTA Spending Breakdown", args.legend = lgspec, las = 3)
+```
+
+As suspected, NYCT is driving the majority of the spending growth. New York City Transit is the MTA agency running the NYC Subway and Bus. That explains why they keep raising the fares. /eyeroll
+
+#### 3.0 NYPD Motor Vehicle Collisions
+
+This data contains detail records of vehicle collisions in New York City reported by the New York Police Department.
+
+The original dataset can be found here: https://data.cityofnewyork.us/Public-Safety/NYPD-Motor-Vehicle-Collisions/h9gi-nx95
+
+The original dataset has more than 1 million rows. The entire csv file is 245 MB. For this project, to save space on Github and avoid crashing R, I randomly sampled 1/100 of the data for analysis.  
+
+The subsetted data can be found here: https://raw.githubusercontent.com/Tyllis/Data607/master/NYPD_Motor_Vehicle_Collisions_subset.csv
+
+```{r}
+theURL2 <- "https://raw.githubusercontent.com/Tyllis/Data607/master/NYPD_Motor_Vehicle_Collisions_subset.csv"
+c.data <- read.csv(theURL2, stringsAsFactors = F)
+str(c.data)
+```
+
+##### 3.1 Cleaning Data
+
+The subsetted data has 11,255 rows and 30 columns.
+
+The original data has 29 columns. I added one more column "ORI.ROW.NUM" that contains the row numbers from the orignal data. 
+
+```{r}
+head(c.data)
+```
+
+Upon inspection, the `CONTRIBUTING.FACTOR.VEHICLE.1` thru 5 and `VEHICLE.TYPE.CODE.1` thru 5 for each vehicle involved are in "wide" format. I need to stack these two variables. Here's how I did it:
+
+1. Use `gather` to stack the `CONTRIBUTING.FACTOR.VEHICLE.1` thru 5 and `VEHICLE.TYPE.CODE.1` thru 5 into one column named `key`. The factor and type are stored in the column named `value`. 
+2. Use `str_extract_all` to extract the vehicle number and store in a new column `VEHICLE.NUM`.
+3. Use `str_replace_all` to remove the vehicle number from the `key` column.
+4. Use `spread` to spread the `CONTRIBUTING.FACTOR.VEHICLE` and `VEHICLE.TYPE.CODE` rows into columns.
+
+```{r}
+idx1 <- which(names(c.data) == "VEHICLE.TYPE.CODE.1")
+idx2 <- which(names(c.data) == "VEHICLE.TYPE.CODE.5")
+idx3 <- which(names(c.data) == "CONTRIBUTING.FACTOR.VEHICLE.1")
+idx4 <- which(names(c.data) == "CONTRIBUTING.FACTOR.VEHICLE.5")
+c.data <- gather(c.data, key, value, c(idx1:idx2, idx3:idx4))
+c.data$VEHICLE.NUM <- unlist(as.numeric(str_extract_all(c.data$key, pattern = "[0-9]")))
+c.data$key <- str_replace_all(c.data$key, pattern = ".[0-9]", replacement = "")
+c.data <- spread(c.data, key, value)
+str(c.data)
+head(c.data)
+```
+
+The data is now in its tidy form.
+
+##### 3.2 Analyzing Data
+
+First I would like to know which borough has the most accident. I use `filter` to remove the rows that does not have borough information, and use `table` to find the result. Since each accident is now recorded in 5 rows (each row for a vehicle), I divide the values calculated by 5. 
+
+```{r}
+table(c.data$BOROUGH) / 5
+table(c.data$BOROUGH) / sum(table(c.data$BOROUGH))
+```
+
+The data shows that Brooklyn has majority of the accidents in NYC, and Staten Island has the least.
+
+Next I would like to know what kind of vehicles are involved in most accident. However, I first have to filter out the blank rows.
+
+```{r}
+c1.data <- filter(c.data, VEHICLE.TYPE.CODE != "")
+vtype <- table(c1.data$VEHICLE.TYPE.CODE)
+barplot(vtype, las = 3)
+```
+
+It looks like overwhelming majority of accidents invovled "passenger vehicles". This makes sense since most of vehicles on the road are passenger vehicles, I presume. 
+
+What about contribution factors? Which factor causes the most accidents?
+
+I filter out the blank row as well as the "Unspecified" row. There are many factors contributing to accident. Here I look at the top 5 factors.
+
+```{r}
+c2.data <- filter(c.data, !(CONTRIBUTING.FACTOR.VEHICLE %in% c("", "Unspecified")))
+cfactor <- sort(table(c2.data$CONTRIBUTING.FACTOR.VEHICLE))
+cfactor[(length(cfactor)-4) : length(cfactor)] / sum(cfactor)
+```
+
+It looks like "driver inattention/distraction" causes overwhelming majority of the accidents. So, we better pay attention while driving... Especially in New York!
+
+#### 4.0 Global Shack Attack Data
+
+This dataset contains records of shack attack incidents reported all over the world, from Year 2014 going all the way back to Year 1845. 
+
+The original data can be found here: http://www.sharkattackfile.net/incidentlog.htm
+
+##### 4.1 Cleaning Data
+
+```{r}
+theURL3 <- "https://raw.githubusercontent.com/Tyllis/Data607/master/attacks.csv"
+s.data <- read.csv(theURL3, stringsAsFactors = F)
+str(s.data)
+tail(s.data)
+```
+
+When the csv file was imported, there are some blank rows introduced at the end of the table. Also, there seems to be two duplicated `Case.Number` columns at the end. I remove these first. 
+
+```{r}
+s.data <- s.data %>% 
+  filter(!(Case.Number %in% c("", NA, 0, "xx"))) %>% 
+  select(-Case.Number.1) %>% 
+  select(-Case.Number.2)
+```
+
+The data is now in its tidy form.
+
+##### 4.2 Analyzing Data
+
+First I'm interested to see if the number of reported attacks has increased/decreased over the years. I will have to filter the `Year` column using `as.numeric`, and drop any 0 or NA rows.
+
+```{r}
+s1.data <- s.data
+s1.data$Year <- as.numeric(s1.data$Year)
+s1.data <- filter(s1.data, !(Year %in% c(0, NA)))
+a <- s1.data %>% 
+  group_by(Year) %>% 
+  summarise(Attacks = n())
+plot(a, type = "l")
+```
+
+Looks like most attacks are reported in the last 100 years. Let's look at attacks from 1900 to 2016.
+
+```{r}
+b <- s1.data %>% 
+  filter(Year >= 1900 & Year < 2017) %>% 
+  group_by(Year) %>% 
+  summarise(Attacks = n())
+plot(b, type = "l")
+```
+
+There is a spike in 1960. It has been increasing since. I think that the increasing trend is probably due to advancement of information technologies since 1980s - it is getting easier for people around the world to communicate and share shack attack reports. 
+
+Next I want to see the percentage of fatalities reported.
+
+```{r}
+s2.data <- filter(s.data, Fatal..Y.N. %in% c("Y", "N"))
+(a <- table(s2.data$Fatal..Y.N.))
+a/sum(a)
+```
+
+So the percentage of fatality is about `r (a/sum(a))[2]*100`%.
+
+Let's look at the type of attacks.
+
+```{r}
+table(s.data$Type)
+```
+
+Majority of the attacks are unprovoked. The GSAF website defines a provoked incident as one in which the shark was speared, hooked, captured or in which a human drew "first blood".
+
+Lastly, I want to see if the `Species` variable can tell me something about shack attacks. 
+
+However, this variable is very messy, containing all kinds of strings:
+
+```{r}
+(len <- length(unique(s.data$Species)))
+```
+
+This column contains `r len` number of different descriptions. Because shack attacks usually happen very fast, victims typically were just able to remember the length, sizes (weights), colors, and/or other apparent features of the shack. This `Species` column is basically a description of the shacks. 
+
+My goal is to use `stringr` to extract the length of the attacking shacks. Even just this task is difficult:
+
+1. The lengths were recorded in different units. They can be in metric or British unit. 
+2. The lengths were sometimes integer and other times decimal numbers.
+3. Sometimes the length were recorded in a range, for example "2m to 3 m shack".
+
+I use this pattern to extract the length: pattern = "[0-9.]+ ?[cm']+". This pattern will perform the following search:
+
+1. Look for numbers first "[0-9.]+""
+2. Look for an optional white space " ?"
+3. Look for string units "[cm']+"
+
+Note that this search pattern will not extract every length information from all rows that contains the information. Since the data is so messy, loss is inevitable. My hope is that this will retain enough data for analysis. Also keep in mind that not all rows has length information.
+
+```{r}
+species <- s.data$Species
+slen <- unlist(str_extract(species, pattern = "[0-9.]+ ?[cm']+"))
+slen <- slen[!is.na(slen)]
+length(slen)
+```
+
+So I have extracted `r length(slen)` non-NA rows. Recall that the original data has `r dim(s.data)[1]` rows. I have retained `r (length(slen)/dim(s.data)[1])*100`% of the dataset.
+
+Next I extract units from the numbers, and create a data.frame object containing the lengths.
+
+```{r}
+num <- unlist(str_extract(slen, pattern = "[0-9.]+"))
+unit <- unlist(str_extract(slen, pattern = "[cm']+"))
+slen.data <- data.frame(num = as.numeric(num), unit, stringsAsFactors = F)
+```
+
+When converting `num` to numeric, I introduced NA rows. I will filter out these NA rows, instead of trying to find out the reason. 
+
+```{r}
+slen.data <- filter(slen.data, !is.na(num))
+table(is.na(slen.data$num))
+```
+
+Notice only few rows are removed.
+
+Next I try to convert the units from metric to British. I simply subset out the metric units, apply the conversion factor, then stick them back together in a vector.
+
+```{r}
+cm <- filter(slen.data, unit == "cm")$num * 0.0328084
+m <- filter(slen.data, unit == "m")$num * 3.28084
+mm <- filter(slen.data, unit == "mm")$num * 0.00328084
+ft <- filter(slen.data, unit == "'")$num * 1
+shack.len.ft <- c(cm, m, mm, ft)
+str(shack.len.ft)
+```
+
+Now I can finally do some analysis.
+
+```{r}
+(a <- summary(shack.len.ft))
+```
+
+So average length of a attacking shack is `r a["Mean"]` ft, with the median length being `r a["Median"]` ft. The maximum size ever observed was a monsterous `r a["Max."]` ft shack.
+
+Let's look at the distribution.
+
+```{r}
+hist(shack.len.ft)
+```
+
+It is bell-shape, unimodal, and skewed to the right.
