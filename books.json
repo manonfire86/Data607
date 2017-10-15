@@ -2,7 +2,7 @@
 	{
 	"title" : "Civil Engineering Reference Manual for the PE Exam",
 	"edition" : 15,
-	"author" : "Michael R. Lindeburge",
+	"author" : ["Michael R. Lindeburge"],
 	"isbn_10" : "1591265088",
 	"price" : "$260.00",
 	"amazon_link" : "https://www.amazon.com/Civil-Engineering-Reference-Manual-Exam/dp/1591265088/ref=mt_hardcover?_encoding=UTF8&me="
