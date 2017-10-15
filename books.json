@@ -3,7 +3,7 @@
 	"title" : "Civil Engineering Reference Manual for the PE Exam",
 	"edition" : 15,
 	"author" : "Michael R. Lindeburge",
-	"isbn_10" : 1591265088,
+	"isbn_10" : "1591265088",
 	"price" : "$260.00",
 	"amazon_link" : "https://www.amazon.com/Civil-Engineering-Reference-Manual-Exam/dp/1591265088/ref=mt_hardcover?_encoding=UTF8&me="
 	},
@@ -11,7 +11,7 @@
 	"title" : "Mechanics of Materials",
 	"edition" : 7,
 	"author" : ["Ferdinand P. Beer", "E. Russell Johnston Jr.", "John T. DeWolf", "David F. Mazurek"],
-	"isbn_10" : 0073398233,
+	"isbn_10" : "0073398233",
 	"price" : "$107.12",
 	"amazon_link" : "https://www.amazon.com/Mechanics-Materials-7th-Ferdinand-Beer/dp/0073398233/ref=sr_1_3?s=books&ie=UTF8&qid=1508013128&sr=1-3&keywords=mechanics+of+materials"
 	},	
@@ -19,7 +19,7 @@
 	"title" : "Data Mining: Applications in Civil Engineering",
 	"edition" : "NA",
 	"author" : ["Sandro Saitta", "Raphael Benny", "Ian Smith"],
-	"isbn_10" : 3639207564,
+	"isbn_10" : "3639207564",
 	"price" : "$67.47",
 	"amazon_link" : "https://www.amazon.com/Data-Mining-Applications-Civil-Engineering/dp/3639207564/ref=sr_1_9?s=books&ie=UTF8&qid=1508013381&sr=1-9&keywords=civil+engineering+machine+learning"
 	}]
