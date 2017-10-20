@@ -185,7 +185,7 @@ We then extracted the actual links to the job posting sites, using the two strin
 
 ```{r eval = F}
 findidx <- str_detect(rawlinks, pattern = "/pagead/clk|/rc/clk")
-goodlinks <- alllinks[findidx] %>%
+goodlinks <- rawlinks[findidx] %>%
 			str_extract(pattern = "/rc/clk[[:graph:]]*|/pagead/clk[[:graph:]]*")
 ```
 
@@ -194,8 +194,6 @@ We then concatenate the whole URL using paste function.
 ```{r eval = F}
 joblinks <- paste(indeed, goodlinks, sep = "")
 ```
-
-This is saved and resides here: https://raw.githubusercontent.com/Tyllis/Data607/master/joblinks.csv
 
 Now we can use readLines function to download the html codes from these links.
 
@@ -207,7 +205,7 @@ readLinesFun <- function(x){
 }
 ```
 
-We used lapply to use the readLines function on each job links. We found that this step is very computationally intensive. We chose to perform scrapping on the first 500 job links. 
+We used lapply to use the readLines function on each job links. We found that this step is very computationally intensive. For this project, we chose to perform scrapping on the first 500 job links. 
 
 ```{r eval=F}
 temp <- lapply(joblinks[1:500], readLinesFun)
