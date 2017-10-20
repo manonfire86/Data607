@@ -1,0 +1,276 @@
+---
+title: "DATA 607 Project 3"
+author: "Jun Yan, Hector Santana, Rafal Decowski, Chad Smith, Aryeh Sturm"
+date: "October 19, 2017"
+output: 
+  html_document:
+    toc: yes
+    toc_float: yes
+    toc_depth: 4
+---
+
+### Introduction
+
+In this project we attempted to answer the question "which are the most valued data science skills", using data obtained from the internet through web scrapping. The analysis done here can be useful for students who are aspired to work in the data science and analytic field. We wish it it can be helpful for students in complementing their training plan, and refining their resumes.    
+We identified two kinds of skills - the "hard" skills and the "soft" skills. The hard skills are technical and domain specific skills, such as the ability to code in a certain computer language or perform statistical analysis, etc. The soft skills are personal attributes that help you engage and succeed in a team. Hard skills are somewhat quantifiable. A person's ability to code can be reflected by that person's past works, degrees, and certificates. Soft skills are harder to measure. We recognize these inherent differences between the two kinds of skills, and we analyze them separately. 
+
+
+### Methodology 
+
+The project, including web scraping and analysis, was done completely in R. We also chose github to be our depository to store our results. 
+
+We used the following R packages:
+
+- RCurl
+- XML
+- rvest
+- stringr
+- tidyr
+- dplyr
+- ggplot2
+
+We also used SelectorGadget to identify some of the fields for scrapping.
+
+
+#### Hard Skills
+
+To collect information about hard skills, we investigated the following two websites:
+
+- indeed.com
+- cybercoders.com
+
+We chose these two websites because they are relatively easier to scrap for information. Typing in "data scientist" in either websites, you will be led to a search result webpage listing the job postings. For each job posting, there is a small section identifying the "desired experience" or "required skills". Using SelectorGadget, the nodes can be identified:
+
+- For indeed.com, the node for "desire experience" is ".experienceList"
+- For cybercoders.com, the node for "required skills" is ".skill-list span".
+
+Using rvest, they can be directly scrapped from the search result page. 
+
+To automate the scrapping process, we also discovered patterns in the URL structures for both websites, which enable us to generate web links automatically that can take us to all the search result pages.
+
+For indeed.com, the first result page is "https://www.indeed.com/jobs?q=data+scientist&start=". To reach subsequent pages, we found that one only needs to add numbers after "start=", in increments of ten. For example, Page 2 will be "https://www.indeed.com/jobs?q=data+scientist&start=10", and Page 3 would have "start=20", etc. We were able to use this strategy to scrap 2,370 pages from indeed.com, each page contains about 14 to 15 job postings.
+
+The cybercoders.com has similar structure for URL. The first result page is "https://www.cybercoders.com/search/?page=1&searchterms=Data%20Scientist&searchlocation=&newsearch=true&originalsearch=true&sorttype=". We noticed that when the "page=1" is manipulated, we can reach other search result pages. For example the 2nd page will be "page=2", and so on. We were able to scrap 6 pages from cybercoders.com, each page contains about 20 job postings. 
+
+
+#### Soft Skills 
+
+To gauge what are the soft skills that employers are looking for, we did some research and found this website useful: https://www.thebalance.com/list-of-soft-skills-2063770. In particular, the webpage has a list of 146 soft skills. We copied them and pasted into a .txt file and it can be reached here: https://raw.githubusercontent.com/Tyllis/Data607/master/list_of_soft_skills.txt.
+
+We decided to use regular expression to collect information on the soft skills. Our strategy is simple. It is basically a keyword search on each relevant web page we scrapped. Our program downloaded the raw html codes from the web page using readLine. Then the functions from the stringr package were used to extract the words on the soft skill list from the html codes.
+
+We decided to use this strategy because, unlike a search result page, the web pages we were attempting to scrap vary largely. Each web page was coded to different styles. You may be able to find the information on one website using rvest, but it usually would not work on the next website. Given the extent of knowledge we have on web scrapping, this is our best strategy. 
+
+We used two sources for our endeavor. 
+
+- indeed.com job postings for data scientists
+- colleges that offer data scientist related degrees or certificates
+
+For the indeed.com, the complication was that we needed to obtain the URL links to the actual job posting website. We knew how to navigate the result pages easily, by manipulating the "start=" string in the URL. But each result page contains hundreds of links, and only 14 to 15 of these links are what we wanted - the actual job posting websites. 
+
+To solve the problem, we used getHTMLLinks function from the XML package. This function returns all the links in the result page. Then, we found a pattern in the links that lead to actual job posting sites. They are links that containing one of the following strings:
+
+- /pagead/clk
+- /rc/clk
+
+We then can use str_detect from the stringr package to extract these links, which enable our program to automatically go to these job-posting websites, and use readLines function to download the raw html codes.
+
+To look for data scientist colleges, we found a good website compiled by Ryan Swanstrom: http://101.datascience.community/2015/07/14/awesome-data-science-colleges-list/. The .csv file he complied contains a list of 566 colleges that offers degrees or certificates related to data science. What's useful for us is a column listing URL links to each school's data science homepage.  It can be reached here: https://github.com/ryanswanstrom/awesome-datascience-colleges/blob/master/data_science_colleges.csv . Again, we used the readLines function to download the html codes. In this case, it's easier because we don't need to figure out what URL links to scrap - it is presented in the list of colleges.
+
+
+### Web Scraping Codes
+
+We now present the R codes written. We would like to warn the readers that some of these codes are computationally intensive. It might take a long time to load.
+
+```{r results='hide', message=FALSE, warning=FALSE}
+library(RCurl)
+library(XML)
+library(rvest)
+library(stringr)
+library(tidyr)
+library(dplyr)
+library(ggplot2)
+```
+
+#### Scraping Indeed.com for Hard Skills
+
+First, we created a vector containing 2,370 URL links, each is a search result page.
+
+```{r eval = F}
+indeed <- "https://www.indeed.com"
+pages <- seq(from = 10, to = 23700, by = 10)
+searchresult <- paste(indeed, "/jobs?q=data+scientist&start=", pages, sep = "")
+```
+Below codes wrapped the rvest functions into one function. 
+
+```{r eval = F}
+readLinks <- function(url, lookingfor){
+			htmllink <- read_html(url)
+			nodes <- htmllink %>% html_nodes(lookingfor) %>% html_text() 
+			return(nodes)
+			}
+```
+
+Below code execute the rvest functions, using lapply.
+
+```{r eval = F}
+indeed_hardskills <- lapply(searchresult, readLinks, lookingfor = ".experienceList")
+```
+
+The result is a list containing 2,370 elements, in which each element is a search result page from indeed.com. Each element contains 14 to 15 sub-elements, corresponding to 14 to 15 job postings on each result page. Each of these sub-elements then contains the desire experience, or hard skills, in vectors. 
+
+We checked for uniqueness. It turns out that a lot the result pages are duplicates. We also unpacked the list in this step.
+
+```{r eval = F}
+indeed_hardskills <- unlist(unique(indeed_hardskills))
+write.csv(indeed_hardskills, file ="indeed_hardskills.csv", row.names=FALSE)
+```
+
+The result is saved and resides in this github repository: https://github.com/Tyllis/Data607/blob/master/indeed_hardskills.csv
+
+
+#### Scraping Cybercoders.com
+
+Similarly, we used the same method to scrap cybercoders.com search result for data scientist. Instead of lapply, we used a for-loop.
+
+```{r eval = F}
+scrape_cyber_coders <- function(){
+  url_start <- "https://www.cybercoders.com/search/?page="
+  url_end <- "&searchterms=Data%20Scientist&searchlocation=&newsearch=true&originalsearch=true&sorttype="
+
+  num_pages <- c(1:6)
+  vector <- rep()
+  
+  for(p in num_pages){
+      url <- sprintf("%s%d%s",url_start, p, url_end)
+      h = read_html(url)
+      skills <- h %>% html_nodes(".skill-list span") %>% html_text()
+      skills <- skills[skills != ""]
+      vector <- append(vector, skills)
+  }
+  sorted_skills <- sort(table(vector), decreasing = FALSE)
+  df <- as.data.frame(sorted_skills) 
+  write.csv(df,file ="cybercoders.csv", row.names=FALSE)
+}
+Scrape_cyber_coders()
+```
+
+The result is saved and resides in this github repository: https://raw.githubusercontent.com/Tyllis/Data607/master/cybercoders_hardskills.csv
+
+
+#### Scrapping Indeed.com for Soft Skills
+
+Two tryCatch functions were created to ignore any errors and return NULL if it does.
+
+```{r eval = F}
+getURLFun <- function(x){
+  return(tryCatch(getURL(x), error = function(e) NULL))
+}
+getHTMLLinksFun <- function(x){
+  return(tryCatch(getHTMLLinks(x), error = function(e) NULL))
+}
+```
+Below code will attempt to extract all URL links in each of the 2,370 pages. Note that this step is very computationally intensive. The process will take several hours, depending on your computer hardware. The resulting object, if saved to a file on disk, will take more than 30 MB of space. 
+
+```{r eval = F}
+rawlinks <- getHTMLLinksFun(getURLFun(searchresult))
+```
+
+We then extracted the actual links to the job posting sites, using the two string patterns we discovered. First we identified the index, then we used str_extract to extract the links.
+
+```{r eval = F}
+findidx <- str_detect(rawlinks, pattern = "/pagead/clk|/rc/clk")
+goodlinks <- alllinks[findidx] %>%
+			str_extract(pattern = "/rc/clk[[:graph:]]*|/pagead/clk[[:graph:]]*")
+```
+
+We then concatenate the whole URL using paste function.
+
+```{r eval = F}
+joblinks <- paste(indeed, goodlinks, sep = "")
+```
+
+This is saved and resides here: https://raw.githubusercontent.com/Tyllis/Data607/master/joblinks.csv
+
+Now we can use readLines function to download the html codes from these links.
+
+First we created a tryCatch function to ignore any errors encounter and return a null if it does.
+
+```{r eval=F}
+readLinesFun <- function(x){ 
+      return(tryCatch(readLines(x), error = function(e) NULL)) 
+}
+```
+
+We used lapply to use the readLines function on each job links. We found that this step is very computationally intensive. We chose to perform scrapping on the first 500 job links. 
+
+```{r eval=F}
+temp <- lapply(joblinks[1:500], readLinesFun)
+```
+
+The result is a list containing html codes for the 500 job websites.
+
+Below, we used a for-loop to extract the soft skills words from the html codes. 
+
+```{r eval=F}
+result <- c()
+for (val in temp){
+  meshcodes <- paste(val, collapse = "")
+  temp <- str_extract(meshcodes, softskills)
+  temp <- temp[!is.na(temp)]
+  result <- c(result, paste(temp, collapse = ", "))
+}
+```
+
+Lastly, we created a data.frame object to hold the results for output file. 
+
+```{r eval = F}
+indeed_softskills <- data.frame(joblinks[1:500], soft_skills = result)
+write.csv(indeed_softskills, file ="indeed_softskills", row.names=FALSE)
+```
+
+This is stored at this github repository: https://raw.githubusercontent.com/Tyllis/Data607/master/indeed_softskills.csv
+
+
+#### Scrapping College Homepages
+
+First, we loaded the list of colleges that offers data science degrees.
+
+```{r eval = F}
+url <- "https://github.com/ryanswanstrom/awesome-datascience-colleges/blob/master/data_science_colleges.csv"
+dscolleges <- read.csv(url, stringsAsFactor = F)
+url_list <- dscolleges$URL
+```
+
+We again used the readLinesFun function to download all the html codes for each URL links.
+
+```{r eval = F}
+homepages <- sapply(url_list, readLinesFun, USE.NAMES = F)
+```
+
+Below, we used a for-loop to extract the words matching the soft skills list using str_extract. Then we place the result in a new column called skills in the dscolleges data frame.
+
+```{r eval = F}
+dscolleges$skills <- c(rep(NA, dim(dscolleges)[1]))
+rowcount = 0
+for (htmlcodes in homepages){
+  meshcodes <- paste(htmlcodes, collapse = "")
+	rowcount <- rowcount + 1
+	temp <- str_extract(meshcodes, softskills)
+	temp <- temp[!is.na(temp)]
+	raw[rowcount, "skills"] <- paste(temp, collapse = ", ")
+}
+write.csv(dscolleges, file ="college_softskills", row.names=FALSE)
+```
+
+This is stored in the following github repository: https://github.com/Tyllis/Data607/blob/master/college_softskills.csv
+
+
+### Analysis of Results
+
+#### Hard Skills
+
+#### Soft Skills
+
+
+### Conclusion
