@@ -61,7 +61,7 @@ We decided to use regular expression to collect information on the soft skills. 
 
 We decided to use this strategy because, unlike a search result page, the web pages we were attempting to scrap vary largely. Each web page was coded to different styles. You may be able to find the information on one website using rvest, but it usually would not work on the next website. Given the extent of knowledge we have on web scrapping, this is our best strategy. 
 
-We used two sources for our endeavor. 
+We used two sources in our endeavor. 
 
 - indeed.com job postings for data scientists
 - colleges that offer data scientist related degrees or certificates
@@ -101,6 +101,7 @@ indeed <- "https://www.indeed.com"
 pages <- seq(from = 10, to = 23700, by = 10)
 searchresult <- paste(indeed, "/jobs?q=data+scientist&start=", pages, sep = "")
 ```
+
 Below codes wrapped the rvest functions into one function. 
 
 ```{r eval = F}
@@ -126,7 +127,7 @@ indeed_hardskills <- unlist(unique(indeed_hardskills))
 write.csv(indeed_hardskills, file ="indeed_hardskills.csv", row.names=FALSE)
 ```
 
-The result is saved and resides in this github repository: https://github.com/Tyllis/Data607/blob/master/indeed_hardskills.csv
+The result is saved and resides in this github repository: https://raw.githubusercontent.com/Tyllis/Data607/master/indeed_hardskills.csv
 
 
 #### Scraping Cybercoders.com
@@ -263,12 +264,14 @@ for (htmlcodes in homepages){
 write.csv(dscolleges, file ="college_softskills", row.names=FALSE)
 ```
 
-This is stored in the following github repository: https://github.com/Tyllis/Data607/blob/master/college_softskills.csv
+The file is stored in the following github repository: https://raw.githubusercontent.com/Tyllis/Data607/master/college_softskills.csv
 
 
 ### Analysis of Results
 
 #### Hard Skills
+
+
 
 #### Soft Skills
 
