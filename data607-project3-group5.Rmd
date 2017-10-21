@@ -60,7 +60,7 @@ To gauge what are the soft skills that employers are looking for, we did some re
 
 We decided to use regular expression to collect information on the soft skills. Our strategy is simple. It is basically a keyword search on each relevant web page we scrapped. Our program downloaded the raw html codes from the web page using readLine. Then the functions from the stringr package were used to extract the words on the soft skill list from the html codes.
 
-We decided to use this strategy because, unlike a search result page, the web pages we were attempting to scrap vary largely. Each web page was coded to different styles. You may be able to find the information on one website using rvest, but it usually would not work on the next website. Given the extent of knowledge we have on web scrapping, this is our best strategy. 
+We decided to use this strategy because, unlike a search result page, the web pages we were attempting to scrap vary largely. Each web page was coded to different styles with different structures. You may be able to find the information on one website using rvest, but it usually would not work on the next website. Given the extent of knowledge we currently have on web scrapping, this is our best strategy. 
 
 We used two data sources in our endeavor. 
 
@@ -123,7 +123,7 @@ indeed_hardskills <- lapply(searchresult, readLinks, lookingfor = ".experienceLi
 
 The result is a list containing 2,370 elements, in which each element is a search result page from indeed.com. Each element contains 14 to 15 sub-elements, corresponding to 14 to 15 job postings on each result page. Each of these sub-elements then contains the desire experience, or hard skills, in vectors. 
 
-We checked for uniqueness. It turns out that a lot the result pages are duplicates. We also unpacked the list in this step.
+We checked for uniqueness. It turns out that a lot the result pages are duplicates. Using the unique function, the 2,370 search result pages shrink down to about 140 pages. Since each page contains 14 to 15 job links, we still ended up with 2,082 job links. We also unpacked the list in this step.
 
 ```{r eval = F}
 indeed_hardskills <- unlist(unique(indeed_hardskills))
@@ -135,7 +135,7 @@ The result is saved and resides in this github repository: https://raw.githubuse
 
 #### Scraping Cybercoders.com
 
-Similarly, we used the same method to scrap cybercoders.com search result for data scientist. Instead of lapply, we used a for-loop.
+Similarly, we used the same method to scrap cybercoders.com search result for data scientist. Instead of lapply, we created a function that contains a for-loop. The function also packages the results into a skill-frequency data frame.
 
 ```{r eval = F}
 scrape_cyber_coders <- function(){
@@ -205,7 +205,7 @@ readLinesFun <- function(x){
 }
 ```
 
-We used lapply to use the readLines function on each job links. We found that this step is very computationally intensive. For this project, we chose to perform scrapping on the first 500 job links. 
+We used lapply to apply readLines function on each job links. We found that this step is even more computationally intensive. For this project, we chose to perform scrapping on the first 500 job links. 
 
 ```{r eval=F}
 temp <- lapply(joblinks[1:500], readLinesFun)
@@ -218,10 +218,10 @@ Below, we used a for-loop to extract the soft skills words from the html codes.
 ```{r eval=F}
 result <- c()
 for (val in temp){
-  meshcodes <- paste(val, collapse = "")
-  temp <- str_extract(meshcodes, softskills)
-  temp <- temp[!is.na(temp)]
-  result <- c(result, paste(temp, collapse = ", "))
+  meshcodes <- paste(val, collapse = "")     # Collapse the html codes into one big string
+  temp <- str_extract(meshcodes, softskills) # extract the soft skills words from the html string
+  temp <- temp[!is.na(temp)]                          # remove "na" elements
+  result <- c(result, paste(temp, collapse = ", "))   # Collapse and append to the result vector
 }
 ```
 
@@ -251,13 +251,13 @@ We again used the readLinesFun function to download all the html codes for each 
 homepages <- sapply(url_list, readLinesFun, USE.NAMES = F)
 ```
 
-Below, we used a for-loop to extract the words matching the soft skills list using str_extract. Then we place the result in a new column called skills in the dscolleges data frame.
+Below, we used a for-loop similar to the indeed.com scheme above to extract the words matching the soft skills list. This time, we placed the result in a new column called skills and placed back into the original dscolleges data frame.
 
 ```{r eval = F}
 dscolleges$skills <- c(rep(NA, dim(dscolleges)[1]))
 rowcount = 0
 for (htmlcodes in homepages){
-  meshcodes <- paste(htmlcodes, collapse = "")
+  meshcodes <- paste(htmlcodes, collapse = "") 
 	rowcount <- rowcount + 1
 	temp <- str_extract(meshcodes, softskills)
 	temp <- temp[!is.na(temp)]
@@ -287,7 +287,7 @@ url <- "https://raw.githubusercontent.com/Tyllis/Data607/master/college_softskil
 colleges_ss <- read.csv(url, header = T, stringsAsFactors = F)
 ```
 
-Before we can analyze the datasets, they require a little tidying. After that, we extracted top 20 skills of each dataset, and plot them on frequency graphs. 
+Before we can analyze the datasets, they required a little tidying. We then extracted top 20 skills of each dataset, and plotted them on frequency graphs. 
 
 
 #### Indeed.com Data for Hard Skills
