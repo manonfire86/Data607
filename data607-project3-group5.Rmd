@@ -56,7 +56,7 @@ The cybercoders.com has similar structure for URL. The first result page is "htt
 
 #### Soft Skills 
 
-To gauge what are the soft skills that employers are looking for, we did some research and found this website useful: https:<!-- -->//www.thebalance.com/list-of-soft-skills-2063770. In particular, the webpage has a list of 146 soft skills. We copied them and pasted into a .txt file and it can be reached here: https:<!-- -->//raw.githubusercontent.com/Tyllis/Data607/master/list_of_soft_skills.txt.
+To gauge what are the soft skills that employers are looking for, we did some research and found this website useful: https://www.thebalance.com/list-of-soft-skills-2063770. In particular, the webpage has a list of 146 soft skills. We copied them and pasted into a .txt file and it can be reached here: https:<!-- -->//raw.githubusercontent.com/Tyllis/Data607/master/list_of_soft_skills.txt.
 
 We decided to use regular expression to collect information on the soft skills. Our strategy is simple. It is basically a keyword search on each relevant web page we scrapped. Our program downloaded the raw html codes from the web page using readLine. Then the functions from the stringr package were used to extract the words on the soft skill list from the html codes.
 
