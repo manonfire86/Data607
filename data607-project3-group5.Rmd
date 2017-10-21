@@ -11,9 +11,9 @@ output:
 
 ### Introduction
 
-In this project we attempted to answer the question "which are the most valued data science skills", using data obtained from the internet through web scrapping. The analysis done here can be useful for students who are aspired to work in the data science and analytic field. We wish it it can be helpful for students in complementing their training plan, and refining their resumes. 
+In this project we attempted to answer the question "which are the most valued data science skills", using data obtained from the internet through web scrapping. The analysis done here can be useful for students who are aspiring to work in data oriented fields. We hope that it will be helpful for students as a complement to their training plan, and a value add in refining their resumes. 
 
-We identified two kinds of skills - the "hard" skills and the "soft" skills. The hard skills are technical and domain specific skills, such as the ability to code in a certain computer language or perform statistical analysis, etc. The soft skills are personal attributes that help you engage and succeed in a team. Hard skills are somewhat quantifiable. A person's ability to code can be reflected by that person's past works, degrees, and certificates. Soft skills are harder to measure. We recognize these inherent differences between the two kinds of skills, and we analyze them separately. 
+We identified two kinds of skills - the "hard" skills and the "soft" skills. The hard skills are technical and domain specific skills, such as the ability to code in a certain computer language or perform statistical analysis, etc. The soft skills are personal attributes that help you engage and succeed in a team working environment. Hard skills are somewhat quantifiable. A person's ability to code can be reflected by that person's past works, degrees, and certificates. Soft skills are harder to measure. We recognize these inherent differences between the two kinds of skills, and we analyze them separately. 
 
 
 ### Methodology 
@@ -40,7 +40,7 @@ To collect information about hard skills, we investigated the following two webs
 - indeed.com
 - cybercoders.com
 
-We chose these two websites because they are relatively easy to scrap for information. Typing in "data scientist" in either websites, you will be led to a search result webpage listing the job postings. For each job posting, there is a small section listing the "desired experience" or "required skills" for the job. Using SelectorGadget, the nodes can be identified:
+We chose these two websites because they contained a large dataset that could be easily scrapped. Typing in "data scientist" in either websites, you will be led to a search result webpage listing the job postings. For each job posting, there is a small section listing the "desired experience" or "required skills" for the job. Using SelectorGadget, the nodes can be identified:
 
 - For indeed.com, the node for "desire experience" is ".experienceList"
 - For cybercoders.com, the node for "required skills" is ".skill-list span".
@@ -67,7 +67,7 @@ We used two data sources in our endeavor.
 - colleges that offer data scientist related degrees or certificates
 - indeed.com job postings for data scientists
 
-We found a useful website compiled by Ryan Swanstrom: http://101.datascience.community/2015/07/14/awesome-data-science-colleges-list/. The .csv file he complied contains a list of 566 colleges that offers degrees or certificates related to data science. What's useful for us is a column listing URL links to each school's data science homepage.  It can be reached here: https://github.com/ryanswanstrom/awesome-datascience-colleges/blob/master/data_science_colleges.csv. 
+We found a useful website compiled by Ryan Swanstrom: http://101.datascience.community/2015/07/14/awesome-data-science-colleges-list/. The .csv file he compiled contains a list of 566 colleges that offer degrees or certificates related to data science. What's useful for us is a column listing URL links to each school's data science homepage.  It can be reached here: https://github.com/ryanswanstrom/awesome-datascience-colleges/blob/master/data_science_colleges.csv. 
 
 With this list, we can use the readLines function to download the html codes for each URL link. Then we used str_extract from the stringr package to look for and extract the words on the soft skills list for each URL Link.  
 
@@ -481,3 +481,11 @@ Again, this agrees largely with the indeed.com dataset. In fact, both datasets a
 
 
 ### Conclusion
+
+Using the aforementioned datasets, we were able to determine that there is currently a shared consensus on the most valued skills, both 'hard' and 'soft', that a data scientist can have in today's corporate environment. By breaking out the demand (refer to our analysis of each dataset) with our web scrapping, data aggregation, parsing, and analysis techniques we were able to see that the job site data sets and the college data sets were relatively in line with each other for the most valued skills and traits. This is indicative of a industry movement towards universally accepted characteristics and abilities for the data science career path; this of course can be subject to major industry shifts as the field as a whole is still in the early stages of development. 
+
+With regards to soft skills, attributes such as experience, social, organization, and communication consistently rank at the very top of what employers are looking for.
+
+With regards to hard skills, the top three most valued skills were `r cc_top20$skills[20]`, `r cc_top20$skills[19]`, and `r cc_top20$skills[18]`.
+
+Knowing this information, students can now aim to refine their skill sets to be the best data scientists that they can be per the desired industry standard.
