@@ -83,7 +83,7 @@ We can use str_detect from the stringr package to identify and extract these lin
 
 ### Web Scraping Codes
 
-We now present the R codes written. We would like to warn the readers that some of these codes are computationally intensive. It might take a long time to load.
+We now present the R codes written of this project. We would like to warn the readers that some of these codes are computationally intensive. It might take a long time to load.
 
 ```{r results='hide', message=FALSE, warning=FALSE}
 library(RCurl)
@@ -271,11 +271,213 @@ The file is stored in the following github repository: https://raw.githubusercon
 
 ### Analysis of Results
 
-#### Hard Skills
+We are now ready to analyze the 4 datasets. First we read the scrapping results into data.frame objects.
+
+```{r}
+url <- "https://raw.githubusercontent.com/Tyllis/Data607/master/indeed_hardskills.csv"
+indeed_hs <- read.csv(url, header = T, stringsAsFactors = F)
+
+url <- "https://raw.githubusercontent.com/Tyllis/Data607/master/cybercoders_hardskills.csv"
+cybercoders_hs <- read.csv(url, header = T, stringsAsFactors = F)
+
+url <- "https://raw.githubusercontent.com/Tyllis/Data607/master/indeed_softskills.csv"
+indeed_ss <- read.csv(url, header = T, stringsAsFactors = F)
+
+url <- "https://raw.githubusercontent.com/Tyllis/Data607/master/college_softskills.csv"
+colleges_ss <- read.csv(url, header = T, stringsAsFactors = F)
+```
+
+Before we can analyze the datasets, they require a little tidying. After that, we extracted top 20 skills of each dataset, and plot them on frequency graphs. 
 
 
+#### Indeed.com Data for Hard Skills
 
-#### Soft Skills
+Below codes prepare the indeed.com data for the hard skills analysis.
+
+```{r}
+# Remove the row number from each row, split the strings, unlist to combine into one vector and remove white spaces
+indeed_hs <- indeed_hs[,1] %>%
+			str_replace(pattern = "^[0-9]* ", replacement ="") %>% 
+			strsplit(split = ", ") %>%
+			unlist() %>%
+			trimws()
+
+# Remove any empty cells and remove "Data Science" element as this is a generic term and not a specific skill
+indeed_hs <- indeed_hs[indeed_hs != ""]
+indeed_hs <- indeed_hs[indeed_hs != 'Data Science']
+
+# Sort by frequency and convert to a dataframe
+indeed_hs <- indeed_hs %>%
+			table()%>%
+			sort(decreasing = F) %>%
+			as.data.frame()
+
+# Extract only top hits				
+indeed_hstop20 <- tail(indeed_hs, 20)
+```
+
+Let's see how many total skills show up in the indeed.com job postings:
+
+```{r}
+# Total count of skills in the dataset
+(total_indeedhs <- sum(indeed_hs$Freq))
+# Number of types of skills
+(num_indeedhs <- dim(indeed_hs)[1])
+```
+
+So, there are `r total_indeedhs` skills appearing in our dataset, of which there are `r num_indeedhs` unique types.
+
+We now plot them in a frequency plot.
+
+```{r}
+names(indeed_hstop20)[1] <- "skills"
+ggplot(indeed_hstop20,aes(x = skills,Freq,fill=Freq))+
+  geom_bar(position = 'dodge',stat = "identity") +
+  coord_flip() +
+  labs(title = "Frequency of Skills Appearing in Job Postings on Indeed.com",y="Frequency",x = "Hard Skills")
+```
+
+According to this graph, the top 5 most valuable hard skills data scientists are:
+
+- `r indeed_hstop20$skills[20]`
+- `r indeed_hstop20$skills[19]`
+- `r indeed_hstop20$skills[18]`
+- `r indeed_hstop20$skills[17]`
+- `r indeed_hstop20$skills[16]`
+
+
+#### Cybercoders.com Data
+
+The data from cybercoders.com was prepared beforehand and ready for analysis right away. We just needed to extract the top 20 skills.
+
+```{r}
+# Extract top 20 skills
+cc_top20 <- tail(cybercoders_hs, 20)
+
+# Total count of skills in the dataset
+(total_cchs <- sum(cybercoders_hs$Freq))
+
+# Number of types of skills
+(num_cchs <- dim(cybercoders_hs)[1])
+```
+
+There are `r total_cchs` skills appearing in our dataset, of which `r num_cchs` are unique.
+
+Below codes plot the frequency graph.
+
+```{r}
+names(cc_top20)[1] <- "skills"
+ggplot(cc_top20,aes(x = reorder(skills, Freq),Freq,fill=Freq))+
+  geom_bar(position = 'dodge',stat = "identity") +
+  coord_flip() +
+  labs(title = "Frequency of Skills Appearing in Job Postings on Cybercoders.com",y="Frequency",x = "Hard Skills")
+```
+
+According to this graph, the top 5 most valuable hard skills data scientists are:
+
+- `r cc_top20$skills[20]`
+- `r cc_top20$skills[19]`
+- `r cc_top20$skills[18]`
+- `r cc_top20$skills[17]`
+- `r cc_top20$skills[16]`
+
+This largely agrees with the dataset from indeed.com, especially the top 3 hard skills. Both datasets suggest that `r cc_top20$skills[20]`, `r cc_top20$skills[19]`, and `r cc_top20$skills[18]` are the most valuable hard skills for data scientists.
+
+
+#### Indeed.com Data for Soft Skills
+
+We now move on to analyze the datasets for soft skills. Below codes prepare the indeed.com data for the soft skills analysis.
+
+```{r}
+# Split the strings, unlist to combine into one vector and remove white spaces
+indeed_ss <- indeed_ss$soft_skills %>%
+			strsplit(split = ", ") %>%
+			unlist() %>%
+			trimws()
+
+# Sort by frequency and convert to a dataframe
+indeed_ss <- indeed_ss %>%
+			table()%>%
+			sort(decreasing = F) %>%
+			as.data.frame()
+
+# Extract only top hits				
+indeed_sstop20 <- tail(indeed_ss, 20)
+
+# Total count of skills
+(total_indeedss <- sum(indeed_ss$Freq))
+
+# Number of type of skills
+(num_indeedss <- dim(indeed_ss)[1])
+```
+
+So, there are `r total_indeedss` soft skills appearing in our dataset, of which there are `r num_indeedss` unique types.
+
+Below is the frequency graph.
+
+```{r}
+names(indeed_sstop20)[1] <- "skills"
+ggplot(indeed_sstop20,aes(x = skills,Freq,fill=Freq))+
+  geom_bar(position = 'dodge',stat = "identity") +
+  coord_flip() +
+  labs(title = "Frequency of Skills Appearing in Job Postings on Indeed.com",y="Frequency",x = "Soft Skills")
+```
+
+The indeed.com dataset suggests that the top 5 soft skills employers deem most valuable in a data scientist are: 
+
+- `r indeed_sstop20$skills[20]`
+- `r indeed_sstop20$skills[19]`
+- `r indeed_sstop20$skills[18]`
+- `r indeed_sstop20$skills[17]`
+- `r indeed_sstop20$skills[16]`
+
+
+#### College Homepages Data
+
+Lastly, let's look at the data scrapped from the various colleges' homepages.
+
+```{r}
+# Split the strings, unlist to combine into one vector and remove white spaces
+colleges_ss <- colleges_ss$skills %>%
+  strsplit(split = ", ") %>%
+  unlist() %>%
+  trimws()
+
+# Sort by frequency and convert to a dataframe
+colleges_ss <- colleges_ss %>%
+  table()%>%
+  sort(decreasing = F) %>%
+  as.data.frame()
+
+# Extract only top hits				
+colleges_sstop20 <- tail(colleges_ss, 20)
+
+# Total count of skills
+(total_colss <- sum(colleges_ss$Freq))
+
+# Number of skills
+(num_colss <- dim(colleges_ss)[1])
+```
+
+So we observed `r total_colss` soft skills appearing in the various colleges' homepages, of which `r num_colss` are unique.
+
+```{r}
+names(colleges_sstop20)[1] <- "skills"
+ggplot(colleges_sstop20,aes(x = skills,Freq,fill=Freq))+
+  geom_bar(position = 'dodge',stat = "identity") +
+  coord_flip() +
+  labs(title = "Frequency of Skills Appearing in College Webpages",y="Frequency",x = "Soft Skills")
+```
+
+The college homepages datatsets suggest that the top 5 most valuable soft skills for data scientist are:
+
+- `r colleges_sstop20$skills[20]`
+- `r colleges_sstop20$skills[19]`
+- `r colleges_sstop20$skills[18]`
+- `r colleges_sstop20$skills[17]`
+- `r colleges_sstop20$skills[16]`
+
+Again, this agrees largely with the indeed.com dataset. In fact, both datasets agree exactly on the top 6 most valuable skills. Attributes such as experience, social, organization, and communication rank consistently at the very top of what employers are looking for. 
 
 
 ### Conclusion
