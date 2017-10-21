@@ -40,7 +40,7 @@ To collect information about hard skills, we investigated the following two webs
 - indeed.com
 - cybercoders.com
 
-We chose these two websites because they are relatively easy to scrap for information. Typing in "data scientist" in either websites, you will be led to a search result webpage listing the job postings. For each job posting, there is a small section identifying the "desired experience" or "required skills". Using SelectorGadget, the nodes can be identified:
+We chose these two websites because they are relatively easy to scrap for information. Typing in "data scientist" in either websites, you will be led to a search result webpage listing the job postings. For each job posting, there is a small section listing the "desired experience" or "required skills" for the job. Using SelectorGadget, the nodes can be identified:
 
 - For indeed.com, the node for "desire experience" is ".experienceList"
 - For cybercoders.com, the node for "required skills" is ".skill-list span".
@@ -49,14 +49,14 @@ Using rvest, they can be directly scrapped from the search result page.
 
 To automate the scrapping process, we also discovered patterns in the URL structures for both websites, which enable us to generate web links automatically that can take us to all the search result pages.
 
-For indeed.com, the first result page is "https://www.indeed.com/jobs?q=data+scientist&start=". To reach subsequent pages, we found that one only needs to add numbers after "start=", in increments of ten. For example, Page 2 can be reached as "https://www.indeed.com/jobs?q=data+scientist&start=10", and Page 3 would have "start=20", etc. We were able to use this strategy to scrap 2,370 pages from indeed.com, each page contains about 14 to 15 job postings.
+For indeed.com, the first result page is "https:<!-- -->//www.indeed.com/jobs?q=data+scientist&start=". To reach subsequent pages, we found that one only needs to add numbers after "start=", in increments of ten. For example, Page 2 can be reached as "https:<!-- -->//www.indeed.com/jobs?q=data+scientist&start=10", and Page 3 would have "start=20", etc. We were able to use this strategy to scrap 2,370 pages from indeed.com, each page contains about 14 to 15 job postings.
 
-The cybercoders.com has similar structure for URL. The first result page is "https://www.cybercoders.com/search/?page=1&searchterms=Data%20Scientist&searchlocation=&newsearch=true&originalsearch=true&sorttype=". We noticed that when the "page=1" is manipulated, we can reach other search result pages. For example the 2nd page will be "page=2", and so on. We were able to scrap 6 pages from cybercoders.com, each page contains about 20 job postings. 
+The cybercoders.com has similar structure for URL. The first result page is "https:<!-- -->//www.cybercoders.com/search/?page=1&searchterms=Data%20Scientist&searchlocation=&newsearch=true&originalsearch=true&sorttype=". We noticed that when the "page=1" string is manipulated, we can reach other search result pages. For example the 2nd page will be "page=2", and so on. We were able to scrap 6 pages from cybercoders.com, each page contains about 20 job postings. 
 
 
 #### Soft Skills 
 
-To gauge what are the soft skills that employers are looking for, we did some research and found this website useful: https://www.thebalance.com/list-of-soft-skills-2063770. In particular, the webpage has a list of 146 soft skills. We copied them and pasted into a .txt file and it can be reached here: https://raw.githubusercontent.com/Tyllis/Data607/master/list_of_soft_skills.txt.
+To gauge what are the soft skills that employers are looking for, we did some research and found this website useful: https:<!-- -->//www.thebalance.com/list-of-soft-skills-2063770. In particular, the webpage has a list of 146 soft skills. We copied them and pasted into a .txt file and it can be reached here: https:<!-- -->//raw.githubusercontent.com/Tyllis/Data607/master/list_of_soft_skills.txt.
 
 We decided to use regular expression to collect information on the soft skills. Our strategy is simple. It is basically a keyword search on each relevant web page we scrapped. Our program downloaded the raw html codes from the web page using readLine. Then the functions from the stringr package were used to extract the words on the soft skill list from the html codes.
 
